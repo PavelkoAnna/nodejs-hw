@@ -6,6 +6,7 @@ import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { connectMongoDB } from './db/connectMongoDB.js';
 import notesRouter from './routes/notesRoutes.js';
+import { errors } from 'celebrate';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(cors());
 app.use(express.json());
 app.use(notesRouter);
 app.use(notFoundHandler);
+app.use(errors());
 app.use(errorHandler);
 const setupServer = async () => {
   await connectMongoDB();

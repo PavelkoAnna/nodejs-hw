@@ -6,23 +6,24 @@ export const getAllNotes = async (req, res, next) => {
     const { page, perPage, tag, search } = req.query;
     const skip = (page - 1) * perPage;
 
-    const myQuery = Note.find({ userId: req.user._id });
+    const filter = { userId: req.user._id };
 
     if (tag) {
-      myQuery.where('tag').equals(tag);
+      filter.tag = tag;
     }
 
     if (search) {
-      myQuery.where({
-        $or: [
-          { title: { $regex: search, $options: 'i' } },
-          { content: { $regex: search, $options: 'i' } },
-        ],
-      });
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } },
+      ];
     }
 
-    const totalNotes = await Note.countDocuments(myQuery.getFilter());
-    const notes = await myQuery.skip(skip).limit(perPage);
+    const [totalNotes, notes] = await Promise.all([
+      Note.countDocuments(filter),
+      Note.find(filter).skip(skip).limit(perPage),
+    ]);
+
     const totalPages = Math.ceil(totalNotes / perPage);
 
     res.status(200).json({
@@ -53,6 +54,7 @@ export const getNoteById = async (req, res, next) => {
     next(error);
   }
 };
+
 export const createNote = async (req, res, next) => {
   try {
     const note = await Note.create({
@@ -65,12 +67,14 @@ export const createNote = async (req, res, next) => {
     next(error);
   }
 };
+
 export const deleteNote = async (req, res, next) => {
   try {
     const note = await Note.findOneAndDelete({
       _id: req.params.noteId,
       userId: req.user._id,
     });
+
     if (!note) {
       throw createHttpError(404, 'Note not found');
     }
@@ -83,13 +87,17 @@ export const deleteNote = async (req, res, next) => {
 
 export const updateNote = async (req, res, next) => {
   try {
-    const note = await Note.findByIdAndUpdate({
-  _id: req.params.noteId,
-  userId: req.user._id,
-}, req.body, {
-      returnDocument: 'after',
-      runValidators: true,
-    });
+    const note = await Note.findOneAndUpdate(
+      {
+        _id: req.params.noteId,
+        userId: req.user._id,
+      },
+      req.body,
+      {
+        returnDocument: 'after',
+        runValidators: true,
+      },
+    );
 
     if (!note) {
       throw createHttpError(404, 'Note not found');

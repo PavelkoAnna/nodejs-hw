@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { celebrate } from 'celebrate';
 import {
   getAllNotes,
   getNoteById,
@@ -6,7 +7,6 @@ import {
   deleteNote,
   updateNote,
 } from '../controllers/notesController.js';
-import { celebrate } from 'celebrate';
 import {
   getAllNotesSchema,
   noteIdSchema,
@@ -14,13 +14,42 @@ import {
   updateNoteSchema,
 } from '../validations/notesValidation.js';
 import { authenticate } from '../middleware/authenticate.js';
-const notesRouter = Router();
-notesRouter.use(authenticate);
 
-notesRouter.get('/notes', celebrate(getAllNotesSchema), getAllNotes);
-notesRouter.get('/notes/:noteId', celebrate(noteIdSchema), getNoteById);
-notesRouter.post('/notes', celebrate(createNoteSchema), createNote);
-notesRouter.patch('/notes/:noteId', celebrate(updateNoteSchema), updateNote);
-notesRouter.delete('/notes/:noteId', celebrate(noteIdSchema), deleteNote);
+const notesRouter = Router();
+
+notesRouter.get(
+  '/notes',
+  authenticate,
+  celebrate(getAllNotesSchema),
+  getAllNotes,
+);
+
+notesRouter.get(
+  '/notes/:noteId',
+  authenticate,
+  celebrate(noteIdSchema),
+  getNoteById,
+);
+
+notesRouter.post(
+  '/notes',
+  authenticate,
+  celebrate(createNoteSchema),
+  createNote,
+);
+
+notesRouter.patch(
+  '/notes/:noteId',
+  authenticate,
+  celebrate(updateNoteSchema),
+  updateNote,
+);
+
+notesRouter.delete(
+  '/notes/:noteId',
+  authenticate,
+  celebrate(noteIdSchema),
+  deleteNote,
+);
 
 export default notesRouter;

@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { FIFTEEN_MINUTES, ONE_DAY } from '../constants/time.js';
 import { Session } from '../models/session.js';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 export const createSession = async (userId) => {
   const session = await Session.create({
     userId,
@@ -15,24 +17,24 @@ export const createSession = async (userId) => {
 };
 
 export const setSessionCookies = (res, session) => {
-  res.cookie('accessToken', session.accessToken, {
+  const cookieOptions = {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+  };
+
+  res.cookie('accessToken', session.accessToken, {
+    ...cookieOptions,
     maxAge: FIFTEEN_MINUTES,
   });
 
   res.cookie('refreshToken', session.refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    ...cookieOptions,
     maxAge: ONE_DAY,
   });
 
   res.cookie('sessionId', session._id.toString(), {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    ...cookieOptions,
     maxAge: ONE_DAY,
   });
 };
